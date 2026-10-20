@@ -8,6 +8,10 @@ if (!localStorage.getItem("cart")) {
 let products = getStoreCatalog();
 let cart = JSON.parse(localStorage.getItem("cart"));
 
+// Admins browse the product view without buy actions; only shoppers see
+// "Add to Cart" and the header cart.
+const isAdminSession = localStorage.getItem("isAdminLoggedIn") === "true";
+
 // Function to render product details
 document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -27,6 +31,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // Inventory: show remaining count and disable buying when it is sold out.
         const stock = Number(product.quantity) || 0;
         const soldOut = stock === 0;
+        // Admins see the stock but not the button; shoppers get the buy action.
+        const buyButtonHtml = isAdminSession
+            ? ""
+            : `
+              <button id="add-to-cart"${soldOut ? " disabled" : ""}>
+                <img src="../../../assets/icons/shopping-cart.svg" alt="" class="btn-cart-icon">
+                ${soldOut ? "Out of Stock" : "Add to Cart"}
+              </button>`;
 
         productDetails.innerHTML = `
         <div class="product-details-2">
@@ -44,10 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
                <i data-feather="box" aria-hidden="true"></i>
                ${soldOut ? "Out of stock" : `In stock — ${stock} ${stock === 1 ? "item" : "items"} remaining`}
              </p>
-              <button id="add-to-cart"${soldOut ? ' disabled' : ''}>
-                <img src="../../../assets/icons/shopping-cart.svg" alt="" class="btn-cart-icon">
-                ${soldOut ? "Out of Stock" : "Add to Cart"}
-              </button>
+             ${buyButtonHtml}
 
               <div class="row">
                 <div class="col-3">
@@ -80,18 +89,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (window.feather) feather.replace();
 
         // Add the product to the cart and toast a confirmation.
-        document.getElementById("add-to-cart").addEventListener("click", () => {
-            // Implement add to cart functionality here
-            addItemToCart(productId);
+        const addToCartButton = document.getElementById("add-to-cart");
+        if (addToCartButton) {
+            addToCartButton.addEventListener("click", () => {
+                // Implement add to cart functionality here
+                addItemToCart(productId);
 
-            Toastify({
-                text: `${product.name} added to cart!`,
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
-        });
+                showToast(`${product.name} added to cart!`, "success");
+            });
+        }
 
         const desc = document.getElementById("product-desc");
         const descToggle = document.getElementById("desc-toggle");
@@ -170,14 +176,7 @@ function addItemToCart(productId) {
 
 // Toast warnings about stock limits, styled like this page's other notices.
 function showStockToast(text) {
-    if (!window.Toastify) return;
-    Toastify({
-        text: text,
-        duration: 3500,
-        gravity: "top",
-        position: "left",
-        style: { background: "#d50000", color: "#fff" },
-    }).showToast();
+    showToast(text, "error", 3500);
 }
 
 // Function to update the item count in the circle
@@ -236,18 +235,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 });
 
-// Delivery fees from Lagos, updated when the location pills change.
+// Delivery fees and ETAs, shared with checkout through products-data.js.
 document.addEventListener("DOMContentLoaded", () => {
-    const deliveryRates = {
-        Lagos: { pickup: 640, door: 1110, minDays: 1, maxDays: 2 },
-        Ibadan: { pickup: 950, door: 1550, minDays: 2, maxDays: 3 },
-        Abeokuta: { pickup: 950, door: 1550, minDays: 2, maxDays: 3 },
-        Abuja: { pickup: 1200, door: 2100, minDays: 2, maxDays: 4 },
-        "Port Harcourt": { pickup: 1350, door: 2400, minDays: 3, maxDays: 5 },
-        "Benin City": { pickup: 1200, door: 2100, minDays: 3, maxDays: 5 },
-        Enugu: { pickup: 1350, door: 2400, minDays: 3, maxDays: 5 },
-        Kano: { pickup: 1500, door: 2800, minDays: 4, maxDays: 7 },
-    };
     const pills = document.querySelectorAll('input[name="delivery-location"]');
     if (!pills.length) return;
     // Format an amount as naira with thousands separators.
@@ -264,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
             'input[name="delivery-location"]:checked',
         );
         const city = checked ? checked.value : "Lagos";
-        const rate = deliveryRates[city] || deliveryRates["Lagos"];
+        const rate = getDeliveryRate(city);
         const pickupFee = document.getElementById("pickup-fee");
         const doorFee = document.getElementById("door-fee");
         const pickupDates = document.getElementById("pickup-dates");

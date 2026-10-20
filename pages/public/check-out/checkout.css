@@ -183,17 +183,21 @@ body {
     margin-top: 0.75rem;
 }
 
-.coupon-details{
-    border: 1px solid #d5d5d5;
-    border-bottom: 4px solid #cbf802;
-    background: #fff;
-    border-radius: 8px;
-    margin-bottom: 0.75rem;
-    padding: 0.75rem;
+.coupon-container{
+    margin-bottom: 0.5rem;
 }
 
-.coupon-details p{
-    margin: 0 0 0.35rem;
+/* Order summary money lines under the item rows */
+.cart-summary-lines p{
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.35rem 0;
+    font-size: 0.95rem;
+}
+
+.cart-summary-lines span{
+    font-weight: 600;
 }
 
 /* Preloader styles */
@@ -254,14 +258,36 @@ body {
     margin: 0 0 10px 0;
 }
 
-#close-discount {
-    background-color: #000;
-    color: #fff;
+/* Discount modal actions: apply the code now or dismiss the offer. */
+.discount-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.discount-actions button {
     font-weight: 700;
     border-radius: 8px;
     border: none;
-    padding: 10px 32px;
+    padding: 10px 24px;
     cursor: pointer;
+}
+
+#apply-discount-code {
+    background-color: #000;
+    color: #fff;
+}
+
+#apply-discount-code:hover {
+    background-color: var(--our-green);
+    color: black;
+}
+
+#close-discount {
+    background-color: transparent;
+    color: #171b13;
+    border: 1px solid #171b13;
 }
 
 #close-discount:hover {

@@ -32,6 +32,9 @@ document.addEventListener("DOMContentLoaded", function () {
         ["Alt Phone", currentOrder.customerAlternatePhone],
         ["Payment method", currentOrder.paymentMethod],
     ];
+    if (currentOrder.deliveryMethod) {
+        detailRows.push(["Delivery", currentOrder.deliveryMethod]);
+    }
     if (currentOrder.paymentMethod === "Card") {
         detailRows.push(["Payment", "Paid in full"]);
         detailRows.push(["Transaction ref", currentOrder.transactionReference]);
@@ -39,13 +42,20 @@ document.addEventListener("DOMContentLoaded", function () {
         detailRows.push(["Payment", "You will pay on delivery"]);
     }
 
+    const money = orderMoney(currentOrder);
     detailsEl.innerHTML = `
         <div class="receipt-section">
             <h4 class="receipt-section-title">Order summary</h4>
             ${orderItemsRows(currentOrder.cart)}
             <div class="receipt-total">
+                <span>Subtotal</span>
+                <strong>${priceText(money.subtotal)}</strong>
+            </div>
+            ${money.discount > 0 ? discountRow(money.discount) : ""}
+            ${(currentOrder.deliveryMethod || money.deliveryFee > 0) ? deliveryRow(currentOrder, money.deliveryFee) : ""}
+            <div class="receipt-total">
                 <span>Total</span>
-                <strong>${orderTotalText(currentOrder.cart)}</strong>
+                <strong>${priceText(money.total)}</strong>
             </div>
         </div>
         <div class="receipt-section">
@@ -53,6 +63,44 @@ document.addEventListener("DOMContentLoaded", function () {
             ${detailRows.map(([label, value]) => rowHtml(label, value)).join("")}
         </div>`;
 });
+
+// Read an order's money pieces, falling back to items-only data for orders
+// saved before delivery fees and discounts were tracked.
+function orderMoney(currentOrder) {
+    const items = Array.isArray(currentOrder.cart) ? currentOrder.cart : [];
+    const itemsTotal = items.reduce(
+        (sum, item) =>
+            sum +
+            (Number(String(item.price).replace(/,/g, "")) || 0) * (item.quantity || 1),
+        0,
+    );
+    const stored = (key, fallback) => {
+        const value = Number(currentOrder[key]);
+        return Number.isFinite(value) ? value : fallback;
+    };
+    const subtotal = stored("subtotal", itemsTotal);
+    const discount = stored("discount", 0);
+    const deliveryFee = stored("deliveryFee", 0);
+    return { subtotal, discount, deliveryFee, total: subtotal - discount + deliveryFee };
+}
+
+// Render the coupon discount line of the receipt.
+function discountRow(discount) {
+    return `
+        <div class="receipt-row">
+            <span class="receipt-row-label">Coupon discount</span>
+            <span class="receipt-row-value">−${priceText(discount)}</span>
+        </div>`;
+}
+
+// Render the delivery fee line; the method sits with the fee on one row.
+function deliveryRow(currentOrder, deliveryFee) {
+    return `
+        <div class="receipt-row">
+            <span class="receipt-row-label">Delivery fee${currentOrder.deliveryMethod ? " (" + currentOrder.deliveryMethod + ")" : ""}</span>
+            <span class="receipt-row-value">${priceText(deliveryFee)}</span>
+        </div>`;
+}
 
 // Render one line per cart item with its quantity and line total.
 function orderItemsRows(cart) {
@@ -67,18 +115,6 @@ function orderItemsRows(cart) {
         </div>`,
         )
         .join("");
-}
-
-// Sum the order's items into a formatted naira total.
-function orderTotalText(cart) {
-    const items = Array.isArray(cart) ? cart : [];
-    const total = items.reduce((sum, item) => {
-        return (
-            sum +
-            (Number(String(item.price).replace(/,/g, "")) || 0) * (item.quantity || 1)
-        );
-    }, 0);
-    return "\u20A6 " + total.toLocaleString("en-NG");
 }
 
 // Format an amount in naira.

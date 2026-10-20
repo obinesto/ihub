@@ -55,21 +55,24 @@
             <input type="text" id="search-input" placeholder="Search...">
             <button type="button" id="search-button" aria-label="Search products"><i data-feather="search" aria-hidden="true"></i><span class="search-label">Search</span></button>
         </div>
-        <div class="user-account">
-            <ul>
-                <li>
-                    <a href="#"><i class="fa-solid fa-user fa-lg"></i></a>
-                    <div class="user-dropdown-content">
-                        <a href="../../member/member_login.html" id="mLogin">Customer Login</a>
-                        <a href="../../admin/admin_login.html">Vendor Login</a>
-                    </div>
-                </li>
-            </ul>
+        <div class="handleUserStates">
+            <div class="user-account">
+                <ul>
+                    <li>
+                        <a href="#"><i class="fa-solid fa-user fa-lg"></i></a>
+                        <div class="user-dropdown-content">
+                            <a href="../../member/member_login.html" id="mLogin">Customer Login</a>
+                            <a href="../../admin/admin_login.html">Admin Login</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
         </div>
         <div class="cart">
-            <a href="#">
+            <a href="../cart/cart.html">
                 <i data-feather="shopping-cart"></i>
                 <span>cart</span>
+                <div id="item-count-circle">0</div>
             </a>
         </div>
     </nav>

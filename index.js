@@ -179,7 +179,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // check login status
-document.addEventListener("DOMContentLoaded", () => {
+// Resolved right away: this script loads at the end of the body with the
+// header already parsed, so the signed-in chip replaces the generic login
+// menu before later paints (avoids a flash, especially on the home page).
+// The DOMContentLoaded hookup is a safety net; the chip guard below keeps
+// double runs from creating two chips.
+function resolveLoggedInHeader() {
   const getProfile = JSON.parse(localStorage.getItem("createProfile"));
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
@@ -190,14 +195,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!userAccount || !userStates) return;
     userAccount.style.display = "none";
 
+    // On the home page the chip is pre-rendered by an inline header script
+    // before the first paint; take that chip over instead of adding a second
+    // one. Everywhere else the chip is created here.
     const displayName =
       isLoggedIn && getProfile && getProfile.firstName
         ? getProfile.firstName
         : "Admin";
-    const profileAccount = document.createElement("div");
-    profileAccount.className = "profileAccount";
-    profileAccount.innerHTML = `<span>Hi <span class="profileAccountName">${displayName}</span></span>`;
-    userStates.appendChild(profileAccount);
+    let profileAccount = userStates.querySelector(".profileAccount");
+    if (profileAccount) {
+      const chipName = profileAccount.querySelector(".profileAccountName");
+      if (chipName) chipName.textContent = displayName;
+    } else {
+      profileAccount = document.createElement("div");
+      profileAccount.className = "profileAccount";
+      profileAccount.innerHTML = `<span>Hi <span class="profileAccountName">${displayName}</span></span>`;
+      userStates.appendChild(profileAccount);
+    }
+    if (profileAccount.dataset.resolved === "true") return; // already finished
+    profileAccount.dataset.resolved = "true";
 
     // Notification count is per account (keyed by email) and counts unread
     // messages only; admins have no inbox badge.
@@ -227,7 +243,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-});
+}
+resolveLoggedInHeader();
+document.addEventListener("DOMContentLoaded", resolveLoggedInHeader);
 
 // Send admin sessions straight to the dashboard.
 function handleAdminDashboard() {
@@ -240,6 +258,19 @@ function handleProfile() {
   const prefix = typeof storeRootPrefix === "function" ? storeRootPrefix() : "";
   window.location.href = prefix + "pages/member/member.html";
 }
+
+// Admin sessions have no shopping cart: hide the header cart icon and its
+// item count badge on every page. This script loads at the end of the body
+// with the header already parsed, so the call runs before later paints;
+// index.html additionally hides it inline in the header markup.
+function hideAdminCart() {
+  if (localStorage.getItem("isAdminLoggedIn") !== "true") return;
+  document.querySelectorAll(".cart").forEach((node) => {
+    node.style.display = "none";
+  });
+}
+hideAdminCart();
+document.addEventListener("DOMContentLoaded", hideAdminCart);
 
 // Function to update the item count in the circle
 function updateItemCount() {

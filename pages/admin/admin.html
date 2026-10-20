@@ -21,8 +21,10 @@
         <!-- nav section -->
         <nav class="navbar">
             <div class="nav-toggle">
-                <button type="button" id="toggle1" aria-label="Open navigation"><i data-feather="menu" aria-hidden="true"></i></button>
-                <button type="button" id="toggle2" aria-label="Close navigation"><i data-feather="x" aria-hidden="true"></i></button>
+                <button type="button" id="toggle1" aria-label="Open navigation"><i data-feather="menu"
+                        aria-hidden="true"></i></button>
+                <button type="button" id="toggle2" aria-label="Close navigation"><i data-feather="x"
+                        aria-hidden="true"></i></button>
             </div>
             <div class="logo">
                 <a href="../../index.html"><img src="../../assets/images/logos/logo.svg" alt="logo"></a>
@@ -58,7 +60,8 @@
 
             <div class="search-bar">
                 <input type="text" id="search-input" placeholder="Search...">
-                <button type="button" id="search-button" aria-label="Search products"><i data-feather="search" aria-hidden="true"></i><span class="search-label">Search</span></button>
+                <button type="button" id="search-button" aria-label="Search products"><i data-feather="search"
+                        aria-hidden="true"></i><span class="search-label">Search</span></button>
             </div>
 
             <div class="handleUserStates">
@@ -68,7 +71,7 @@
                             <a href="#"><i class="fa-solid fa-user fa-lg"></i></a>
                             <div class="user-dropdown-content">
                                 <a href="../../pages/member/member_login.html" id="mLogin">Customer Login</a>
-                                <a href="../admin/admin_login.html">Vendor Login</a>
+                                <a href="../admin/admin_login.html">Admin Login</a>
                             </div>
                         </li>
                     </ul>
@@ -79,6 +82,7 @@
                 <a href="../public/cart/cart.html">
                     <i data-feather="shopping-cart"></i>
                     <span>cart</span>
+                    <div id="item-count-circle">0</div>
                 </a>
             </div>
         </nav>
@@ -125,49 +129,114 @@
     </header>
     <main class="admin-main">
         <div class="admin-heading">
-            <div><h1>Product management</h1><p>Manage the products shown in your store.</p></div>
+            <div>
+                <h1>Product management</h1>
+                <p>Manage the products shown in your store.</p>
+            </div>
             <div class="admin-heading-actions">
-                <button type="button" id="new-product"><i data-feather="plus" aria-hidden="true"></i>Add product</button>
-                <a class="button-link" href="../../index.html"><i data-feather="external-link" aria-hidden="true"></i>View store</a>
-                <button type="button" id="logoutButton"><i data-feather="log-out" aria-hidden="true"></i>Sign out</button>
+                <button type="button" id="new-product"><i data-feather="plus" aria-hidden="true"></i>Add
+                    product</button>
+                <a class="button-link" href="../../index.html"><i data-feather="external-link"
+                        aria-hidden="true"></i>View store</a>
+                <button type="button" id="logoutButton"><i data-feather="log-out" aria-hidden="true"></i>Sign
+                    out</button>
             </div>
         </div>
         <p class="admin-notice" id="admin-notice" role="status" aria-live="polite" hidden></p>
         <div class="admin-stats" aria-label="Catalog summary">
-            <div class="admin-stat"><i data-feather="package" aria-hidden="true"></i><div><strong id="product-count">0</strong><span>Products</span></div></div>
-            <div class="admin-stat"><i data-feather="layers" aria-hidden="true"></i><div><strong id="stock-count">0</strong><span>Units in stock</span></div></div>
-            <div class="admin-stat"><i data-feather="alert-circle" aria-hidden="true"></i><div><strong id="unavailable-count">0</strong><span>Out of stock</span></div></div>
+            <div class="admin-stat"><i data-feather="package" aria-hidden="true"></i>
+                <div><strong id="product-count">0</strong><span>Products</span></div>
+            </div>
+            <div class="admin-stat"><i data-feather="layers" aria-hidden="true"></i>
+                <div><strong id="stock-count">0</strong><span>Units in stock</span></div>
+            </div>
+            <div class="admin-stat"><i data-feather="alert-circle" aria-hidden="true"></i>
+                <div><strong id="unavailable-count">0</strong><span>Out of stock</span></div>
+            </div>
         </div>
         <div class="admin-workspace">
             <section class="admin-editor" aria-labelledby="editor-title">
-                <div class="admin-section-heading"><div><h2 id="editor-title">Add product</h2><p id="editor-caption">Enter the product details below.</p></div></div>
+                <div class="admin-section-heading">
+                    <div>
+                        <h2 id="editor-title">Add product</h2>
+                        <p id="editor-caption">Enter the product details below.</p>
+                    </div>
+                </div>
                 <form id="product-form">
                     <input type="hidden" id="product-id">
-                    <div class="admin-field"><label for="product-name">Product name</label><input type="text" id="product-name" required></div>
-                    <div class="admin-field"><label for="product-category">Category</label><select id="product-category" required><option value="iphone">iPhone</option><option value="ipad">iPad</option><option value="mac">Mac</option><option value="accessories">Accessories</option></select></div>
-                    <div class="admin-field-pair">
-                        <div class="admin-field"><label for="product-price">Price (₦)</label><input type="number" id="product-price" min="0" step="1" required></div>
-                        <div class="admin-field"><label for="product-quantity">Stock quantity</label><input type="number" id="product-quantity" min="0" step="1" required></div>
+                    <div class="admin-field">
+                        <label for="product-name">Product name</label>
+                        <input type="text" id="product-name" required>
                     </div>
-                    <div class="admin-field"><label for="product-image">Image URL or path</label><input type="text" id="product-image" required aria-describedby="image-help"><small id="image-help">Use an image link or a path from the site root.</small></div>
-                    <div class="admin-field"><label for="product-description">Description</label><textarea id="product-description" rows="4" required></textarea></div>
-                    <div class="admin-actions"><button type="submit" id="save-product"><i data-feather="plus" aria-hidden="true"></i><span>Add product</span></button><button type="button" id="cancel-edit" hidden>Cancel edit</button></div>
+                    <div class="admin-field"><label for="product-category">Category</label><select id="product-category"
+                            required>
+                            <option value="iphone">iPhone</option>
+                            <option value="ipad">iPad</option>
+                            <option value="mac">Mac</option>
+                            <option value="accessories">Accessories</option>
+                        </select></div>
+                    <div class="admin-field-pair">
+                        <div class="admin-field">
+                            <label for="product-price">Price (₦)</label>
+                            <input type="number" id="product-price" min="0" step="1" required>
+                        </div>
+                        <div class="admin-field">
+                            <label for="product-quantity">Stock quantity</label>
+                            <input type="number" id="product-quantity" min="0" step="1" required>
+                        </div>
+                    </div>
+                    <div class="admin-field">
+                        <label for="product-image">Image URL</label>
+                        <input type="text" id="product-image" required aria-describedby="image-help">
+                        <small id="image-help">Kindly paste product image URL here</small>
+                    </div>
+                    <div class="admin-field">
+                        <label for="product-description">Description</label>
+                        <textarea id="product-description" rows="4" required></textarea>
+                    </div>
+                    <div class="admin-actions">
+                        <button type="submit" id="save-product">
+                            <i data-feather="plus" aria-hidden="true"></i>
+                            <span>Add product</span>
+                        </button>
+                        <button type="button" id="cancel-edit" hidden>Cancel edit</button>
+                    </div>
                 </form>
             </section>
             <section class="admin-catalog" aria-labelledby="catalog-title">
-                <div class="admin-section-heading"><div><h2 id="catalog-title">Product catalog</h2><p id="catalog-count" aria-live="polite"></p></div></div>
-                <div class="admin-toolbar">
-                    <div class="admin-search"><label class="visually-hidden" for="catalog-search">Search products</label><i data-feather="search" aria-hidden="true"></i><input type="search" id="catalog-search" placeholder="Search products…"></div>
-                    <div><label class="visually-hidden" for="catalog-category">Filter by category</label><select id="catalog-category"><option value="">All categories</option><option value="iphone">iPhone</option><option value="ipad">iPad</option><option value="mac">Mac</option><option value="accessories">Accessories</option></select></div>
+                <div class="admin-section-heading">
+                    <div>
+                        <h2 id="catalog-title">Product catalog</h2>
+                        <p id="catalog-count" aria-live="polite"></p>
+                    </div>
                 </div>
-                <div class="admin-list-head" aria-hidden="true"><span>Product</span><span>Price</span><span>Stock</span><span>Actions</span></div>
+                <div class="admin-toolbar">
+                    <div class="admin-search"><label class="visually-hidden" for="catalog-search">Search
+                            products</label><i data-feather="search" aria-hidden="true"></i><input type="search"
+                            id="catalog-search" placeholder="Search products…"></div>
+                    <div><label class="visually-hidden" for="catalog-category">Filter by category</label><select
+                            id="catalog-category">
+                            <option value="">All categories</option>
+                            <option value="iphone">iPhone</option>
+                            <option value="ipad">iPad</option>
+                            <option value="mac">Mac</option>
+                            <option value="accessories">Accessories</option>
+                        </select></div>
+                </div>
+                <div class="admin-list-head" aria-hidden="true">
+                    <span>Product</span><span>Price</span><span>Stock</span><span>Actions</span>
+                </div>
                 <div id="product-list"></div>
             </section>
         </div>
     </main>
-    <dialog id="delete-product-dialog" class="admin-delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-description">
-        <h2 id="delete-title">Delete product?</h2><p id="delete-description"></p>
-        <div class="admin-actions"><button type="button" id="cancel-delete" autofocus>Keep product</button><button type="button" id="confirm-delete"><i data-feather="trash-2" aria-hidden="true"></i>Delete product</button></div>
+    <dialog id="delete-product-dialog" class="admin-delete-dialog" aria-labelledby="delete-title"
+        aria-describedby="delete-description">
+        <h2 id="delete-title">Delete product?</h2>
+        <p id="delete-description"></p>
+        <div class="admin-actions"><button type="button" id="cancel-delete" autofocus>Keep product</button><button
+                type="button" id="confirm-delete"><i data-feather="trash-2" aria-hidden="true"></i>Delete
+                product</button></div>
     </dialog>
 
     <!-- footer -->

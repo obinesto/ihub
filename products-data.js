@@ -541,6 +541,80 @@ function findStoreProduct(id) {
     return catalog.find(p => p && p.id == id);
 }
 
+// Delivery coverage: pickup and door-delivery fees (naira) plus pickup ETA
+// days for each supported city. One table serves the product page, checkout
+// and the receipt.
+const STORE_DELIVERY_RATES = {
+    Lagos: { pickup: 640, door: 1110, minDays: 1, maxDays: 2 },
+    Ibadan: { pickup: 950, door: 1550, minDays: 2, maxDays: 3 },
+    Abeokuta: { pickup: 950, door: 1550, minDays: 2, maxDays: 3 },
+    Abuja: { pickup: 1200, door: 2100, minDays: 2, maxDays: 4 },
+    "Port Harcourt": { pickup: 1350, door: 2400, minDays: 3, maxDays: 5 },
+    "Benin City": { pickup: 1200, door: 2100, minDays: 3, maxDays: 5 },
+    Enugu: { pickup: 1350, door: 2400, minDays: 3, maxDays: 5 },
+    Kano: { pickup: 1500, door: 2800, minDays: 4, maxDays: 7 },
+};
+
+// One city's delivery settings; unsupported cities fall back to Lagos.
+function getDeliveryRate(city) {
+    return STORE_DELIVERY_RATES[city] || STORE_DELIVERY_RATES.Lagos;
+}
+
+// Deduct purchased units from the working catalog so stock reflects orders.
+// Called after an order is saved (card or pay on delivery). Products were
+// deleted by the admin meanwhile are skipped; admin edits still win.
+function reduceStockForProducts(cartItems) {
+    const items = (Array.isArray(cartItems) ? cartItems : []).filter(
+        (item) => item && item.id !== undefined && Number(item.quantity) > 0,
+    );
+    if (!items.length) return false;
+    const next = getStoreCatalog().map((product) => {
+        const match = items.find((item) => String(item.id) === String(product.id));
+        if (!match) return product;
+        const remaining = Math.max(0, Number(product.quantity) - Number(match.quantity));
+        if (remaining === Number(product.quantity)) return product;
+        return { ...product, quantity: remaining };
+    });
+    try {
+        localStorage.setItem('products', JSON.stringify(next));
+        return true;
+    } catch (e) {
+        /* keep the old stock when storage refuses the write */
+        return false;
+    }
+}
+
+// Shared toast notifications with success, info and error variants:
+//   showToast("Saved!", "success")
+//   showToast("Almost done.", "info")
+//   showToast("Something went wrong.", "error")
+// Uses Toastify when the page includes it; other pages get a plain fallback
+// banner so no user feedback is lost.
+function showToast(text, kind = "info", duration = 3000) {
+    const palette = {
+        success: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
+        info: { background: "linear-gradient(to right, #171b13, #38402f)" },
+        error: { background: "linear-gradient(to right, #c62828, #d50000)" },
+    };
+    const style = palette[kind] || palette.info;
+    if (window.Toastify) {
+        window.Toastify({
+            text: text,
+            duration: duration,
+            gravity: "top",
+            position: "left",
+            style: style,
+        }).showToast();
+        return;
+    }
+    const toast = document.createElement("div");
+    toast.className = "ihub-toast ihub-toast--" + (palette[kind] ? kind : "info");
+    toast.textContent = text;
+    toast.setAttribute("role", "status");
+    document.body.appendChild(toast);
+    window.setTimeout(() => toast.remove(), duration);
+}
+
 // Per-user message inbox. Each account owns its own message list, keyed by email
 function userMessageKey(email) {
     const id = (typeof email === 'string' && email.trim()) ? email.trim().toLowerCase() : '';

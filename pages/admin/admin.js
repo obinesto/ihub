@@ -254,6 +254,19 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
         if (!form.reportValidity()) return;
+        // New items must ship with a hosted image URL: uploaded files and
+        // local paths cannot be shared with shoppers, so only URLs resolve.
+        const imageReference = fields.image.value.trim();
+        const validImage =
+            editing ||
+            /^https?:\/\/\S+/i.test(imageReference);
+        if (!validImage) {
+            fields.image.setCustomValidity(
+                "Kindly paste an image URL.",
+            );
+            fields.image.reportValidity();
+            return;
+        }
         const values = {
             name: fields.name.value.trim(),
             price: Number(fields.price.value).toLocaleString("en-NG", {

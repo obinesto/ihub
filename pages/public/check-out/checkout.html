@@ -37,7 +37,10 @@
         <img class="promo-image" src="../../../assets/icons/discountShoutout.png" alt="promo-shoutout">
         <p>Great news! We have a special discount available for you.</p>
         <p>Use the code <strong>DISCOUNT10</strong> to get 10% off on your order.</p>
-        <button id="close-discount">OK</button>
+        <div class="discount-actions">
+            <button id="apply-discount-code">Apply Code</button>
+            <button id="close-discount">Dismiss</button>
+        </div>
     </div>
 
     <!-- Main content -->
@@ -94,7 +97,7 @@
                                 <a href="#"><i class="fa-solid fa-user fa-lg"></i></a>
                                 <div class="user-dropdown-content">
                                     <a href="../../member/member_login.html" id="mLogin">Customer Login</a>
-                                    <a href="../../admin/admin_login.html">Vendor Login</a>
+                                    <a href="../../admin/admin_login.html">Admin Login</a>
                                 </div>
                             </li>
                         </ul>
@@ -189,12 +192,25 @@
                 </div>
 
                 <div class="form-field">
+                    <Label id="label-delivery">Delivery Method:</Label>
+                    <div class="city-pills delivery-method-pills" role="radiogroup" aria-label="Delivery method">
+                        <label class="city-pill"><input type="radio" name="deliveryMethod" value="pickup"> Pickup station</label>
+                        <label class="city-pill"><input type="radio" name="deliveryMethod" value="door" checked> Door delivery</label>
+                    </div>
+                </div>
+
+                <div class="form-field">
                     <Label for="phone" id="label-phone">Phone:</Label>
                     <input type="text" id="phone" placeholder="phone" required>
                 </div>
                 <div class="form-field">
                     <Label for="altPhone" id="label-altPhone">Alt Phone/Whatsapp:</Label>
                     <input type="text" id="altPhone" placeholder="phone" required>
+                </div>
+
+                <div class="coupon-container">
+                    <input type="text" id="coupon-code" placeholder="Enter Coupon code if any..">
+                    <button type="button" id="apply-coupon-button">Apply Coupon</button>
                 </div>
 
                 <input type="submit" id="submit-hover" value="Proceed to Checkout">
@@ -208,14 +224,10 @@
 
                 <div id="shoppingcart-items"></div>
 
-                <div class="coupon-container">
-                    <div class="coupon-details">
-                        <p>Enjoy 10% Discount on Every Order</p>
-                        <p>Use <span style="color: gold; font-weight: 600;">Ihubnigeria</span> Coupon: <span
-                                style="color: red; font-weight: 400;">DISCOUNT10</span></p>
-                    </div>
-                    <input type="text" id="coupon-code" placeholder="Enter Coupon code if any..">
-                    <button id="apply-coupon-button">Apply Coupon</button>
+                <div class="cart-summary-lines">
+                    <p>Subtotal: ₦<span id="cart-subtotal">0</span></p>
+                    <p id="discount-line" hidden>Discount: −₦<span id="cart-discount">0</span></p>
+                    <p>Delivery fee: ₦<span id="delivery-fee">0</span></p>
                 </div>
                 <div id="cart-summary">
                     <h2>Total: ₦<span id="cart-total">0.00</span></h2>

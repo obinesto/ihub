@@ -1,8 +1,19 @@
 const nairasymbol = "\u20A6";
+const VALID_COUPON_CODE = "DISCOUNT10";
+const COUPON_DISCOUNT_PERCENT = 10;
 
-// Checkout page load: hide the preloader and show the discount popup.
+// Show or hide the intro discount modal with its overlay.
+function showDiscountModal(show) {
+    const modal = document.getElementById("discount-message");
+    const overlay = document.getElementById("overlay");
+    if (modal) modal.style.display = show ? "block" : "none";
+    if (overlay) overlay.style.display = show ? "block" : "none";
+}
+
+// Checkout page load: hide the preloader and show the discount modal.
+// The modal offers two actions: apply the promo code now, or dismiss it.
 document.addEventListener("DOMContentLoaded", function () {
-    // On full load, hide the preloader and show the discount window.
+    // On full load, hide the preloader and show the main content.
     window.addEventListener("load", function () {
         // Introduce a delay before hiding the preloader and showing the main content
         setTimeout(function () {
@@ -14,59 +25,62 @@ document.addEventListener("DOMContentLoaded", function () {
             const mainContent = document.getElementById("main-content");
             mainContent.classList.add("visible");
 
-            // Show the discount message and the overlay
-            const discountMessage = document.getElementById("discount-message");
-            const overlay = document.getElementById("overlay");
-            discountMessage.style.display = "block";
-            overlay.style.display = "block";
+            // Present the one-time discount offer modal.
+            showDiscountModal(true);
         }, 1000); // Delay in milliseconds (1000ms = 1 seconds)
 
-        // Close discount message and continue to main content
+        // Apply the promo code straight from the modal.
+        document
+            .getElementById("apply-discount-code")
+            .addEventListener("click", function () {
+                const couponInput = document.getElementById("coupon-code");
+                if (couponInput) couponInput.value = VALID_COUPON_CODE;
+                showDiscountModal(false);
+
+                // Route through the real coupon button so totals and toasts stay in sync.
+                const applyButton = document.getElementById("apply-coupon-button");
+                if (applyButton) applyButton.click();
+            });
+
+        // Dismiss the modal and continue to main content; no code is applied.
         document
             .getElementById("close-discount")
             .addEventListener("click", function () {
-                const discountMessage = document.getElementById("discount-message");
-                const overlay = document.getElementById("overlay");
-                discountMessage.style.display = "none";
-                overlay.style.display = "none";
-
-                const mainContent = document.getElementById("main-content");
-                mainContent.style.opacity = "1"; // Ensure main content is fully visible
+                showDiscountModal(false);
             });
 
-        // Close discount message and continue to main content
+        // The X icon dismisses the modal as well.
         document
             .getElementById("close-icon")
             .addEventListener("click", function () {
-                const discountMessage = document.getElementById("discount-message");
-                const overlay = document.getElementById("overlay");
-                discountMessage.style.display = "none";
-                overlay.style.display = "none";
-
-                const mainContent = document.getElementById("main-content");
-                mainContent.style.opacity = "1"; // Ensure main content is fully visible
+                showDiscountModal(false);
             });
     });
 });
 
-// Checkout form: summary, coupons, city-state sync, and submit routing.
+// Checkout form: summary, coupons, delivery fee, city-state sync, and submit routing.
 document.addEventListener("DOMContentLoaded", () => {
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    // Price pieces kept in sync for the coupon, delivery fee, and payment amount.
+    let subtotal = 0; // items only
+    let discount = 0; // coupon amount, off the subtotal
+    let deliveryFee = 0; // chosen city + delivery method
 
     // Call renderCart on page load to display items in the cart
     renderCartsummary();
 
-    // Render the order summary rows and store the raw total.
+    // Render the order summary rows; the team keeps tax-free prices.
     function renderCartsummary() {
         const cartItemsContainer = document.getElementById("shoppingcart-items");
-        const cartTotalElement = document.getElementById("cart-total");
         cartItemsContainer.innerHTML = "";
-        let total = 0;
+
+        subtotal = 0;
 
         cart.forEach((item) => {
             const itemTotalRaw = item.price.replace(/,/g, ""); // remove commas to aid summation
             const itemTotal = parseInt(itemTotalRaw, 10) * item.quantity;
-            total += itemTotal;
+            subtotal += itemTotal;
 
             const itemRow = document.createElement("div");
             itemRow.className = "handleDivStyling";
@@ -78,79 +92,94 @@ document.addEventListener("DOMContentLoaded", () => {
                  <p> Unit Price ₦ ${item.price}</p>
                 <hr/>
                <p> Set Price: ${nairasymbol} ${itemTotal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
-                
+
             `;
 
             cartItemsContainer.appendChild(itemRow);
         });
 
-        const totalAmount = (cartTotalElement.innerHTML = total
-            .toString()
-            .replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+        // Each visit starts without a coupon so re-entry is possible.
         localStorage.removeItem("couponApplied");
-        localStorage.setItem("totalAmount", totalAmount);
+        discount = 0;
+
+        syncDeliveryFee();
+    }
+
+    // Read the chosen delivery method as its human-readable label.
+    function selectedDeliveryMethod() {
+        const selected = document.querySelector('input[name="deliveryMethod"]:checked');
+        const label = selected
+            ? selected.closest(".city-pill")
+            : null;
+        if (selected && label) return label.textContent.trim();
+        return "Door delivery";
+    }
+
+    // Recompute the fee from the chosen city pills and delivery method plates.
+    function syncDeliveryFee() {
+        const city = document.querySelector('input[name="city"]:checked');
+        const method = document.querySelector('input[name="deliveryMethod"]:checked');
+        const rate = getDeliveryRate(city ? city.value : "Lagos");
+        deliveryFee = rate[method && method.value === "pickup" ? "pickup" : "door"];
+        updateTotalsUI();
+    }
+
+    // Repaint the summary money lines and publish the payable amount.
+    function updateTotalsUI() {
+        const naira = (amount) =>
+            amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+        const subtotalElement = document.getElementById("cart-subtotal");
+        if (subtotalElement) subtotalElement.textContent = naira(subtotal);
+
+        const discountLine = document.getElementById("discount-line");
+        const discountElement = document.getElementById("cart-discount");
+        if (discountElement) discountElement.textContent = naira(discount);
+        if (discountLine) discountLine.hidden = discount <= 0;
+
+        const feeElement = document.getElementById("delivery-fee");
+        if (feeElement) feeElement.textContent = naira(deliveryFee);
+
+        const total = subtotal - discount + deliveryFee;
+        const cartTotalElement = document.getElementById("cart-total");
+        if (cartTotalElement) cartTotalElement.textContent = naira(total);
+
+        // Publish the order money pieces for payment and the saved order.
+        localStorage.setItem("totalAmount", String(total));
+        localStorage.setItem("subtotal", String(subtotal));
+        localStorage.setItem("discountAmount", String(discount));
+        localStorage.setItem("deliveryFee", String(deliveryFee));
+        localStorage.setItem("deliveryMethodLabel", selectedDeliveryMethod());
     }
 
     // Function to update the item count in the checkout Summary
     function updateItemCount() {
         const CartitemCount = document.getElementById("cart-numberofitems");
+        if (!CartitemCount) return;
         let cart = JSON.parse(localStorage.getItem("cart")) || [];
         let itemCount = cart.reduce((total, item) => total + item.quantity, 0);
         CartitemCount.textContent = itemCount;
     }
     updateItemCount();
 
-    // Function to apply coupon code and deduct 10%
+    // Function to apply coupon code and deduct a fixed percentage
     function applyCouponCode(couponCode) {
-        const validCouponCode = "DISCOUNT10"; // Example valid coupon code
-        const discountPercentage = 10; // Discount percentage
-
-        // Retrieve the cart from localStorage
-        let cart = JSON.parse(localStorage.getItem("cart")) || [];
-        const storedAmount = localStorage.getItem("totalAmount").replace(/,/g, "");
-        const customerAmount = parseInt(storedAmount, 10);
-
         // Check if the coupon has already been used for the current order
         if (localStorage.getItem("couponApplied") === "true") {
-            Toastify({
-                text: "Coupon code has already been used for this order.",
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
-
+            showToast("Coupon code has already been used for this order.", "info");
             return;
         }
 
-        if (couponCode === validCouponCode) {
-            const discountAmount = (customerAmount * discountPercentage) / 100;
-            const newTotalAmount = customerAmount - discountAmount;
-            Toastify({
-                text: `Coupon applied! ${discountPercentage}% has been deducted from your total.`,
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
-
-            // Save the updated total amount back to localStorage
-            localStorage.setItem("totalAmount", newTotalAmount);
+        if (couponCode === VALID_COUPON_CODE) {
+            discount = (subtotal * COUPON_DISCOUNT_PERCENT) / 100;
             localStorage.setItem("couponApplied", "true"); // Set flag indicating coupon has been applied
-
-            // Update the total amount display
-            const totalAmountElement = document.getElementById("cart-total");
-            if (totalAmountElement) {
-                totalAmountElement.innerHTML = `${newTotalAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
-            }
+            showToast(
+                `Coupon applied! ${COUPON_DISCOUNT_PERCENT}% has been deducted from your total.`,
+                "success",
+            );
+            updateTotalsUI();
         } else {
-            Toastify({
-                text: "Invalid coupon code.",
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
+            showToast("Invalid coupon code.", "error");
         }
     }
 
@@ -165,7 +194,15 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("apply-coupon-button")
         .addEventListener("click", applyCoupon);
 
-    // City pills auto-fill the (read-only) state field
+    // Apply the coupon on Enter in the input instead of submitting the form.
+    document.getElementById("coupon-code").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            applyCoupon();
+        }
+    });
+
+    // City pills auto-fill the (read-only) state field and refresh the fee.
     const cityStateMap = {
         Lagos: "Lagos State",
         Ibadan: "Oyo State",
@@ -184,11 +221,18 @@ document.addEventListener("DOMContentLoaded", () => {
             stateInput.value = cityStateMap[selected.value] || "";
         }
     }
+    // Refresh fee, method label, and state whenever a choice changes.
+    function syncDeliveryChoices() {
+        syncStateWithCity();
+        syncDeliveryFee();
+    }
     document.querySelectorAll('input[name="city"]').forEach((pill) => {
-        // Sync the state whenever a city pill changes.
-        pill.addEventListener("change", syncStateWithCity);
+        pill.addEventListener("change", syncDeliveryChoices);
     });
-    syncStateWithCity();
+    document.querySelectorAll('input[name="deliveryMethod"]').forEach((pill) => {
+        pill.addEventListener("change", syncDeliveryFee);
+    });
+    syncDeliveryChoices();
 
     // Checkout functionality
     document.getElementById("form").addEventListener("submit", function (event) {
@@ -197,28 +241,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // Check if user is logged in
         const userEmail = localStorage.getItem("userEmail");
         if (!userEmail) {
-            Toastify({
-                text: "Please log in to proceed with the checkout.",
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
-
+            showToast("Please log in to proceed with the checkout.", "info");
             window.location.href = "../../../pages/member/member_login.html"; // Redirect to login page
             return;
         }
 
         // Stop an empty cart from reaching payment
         if (cart.length === 0) {
-            Toastify({
-                text: "Your cart is empty!",
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
-
+            showToast("Your cart is empty!", "error");
             return;
         }
 
@@ -243,14 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
             !customerPhone ||
             !customerAlternatePhone
         ) {
-            Toastify({
-                text: "Please fill out all required fields.",
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
-
+            showToast("Please fill out all required fields.", "error");
             return;
         }
 
@@ -266,12 +289,15 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("customerPhone", customerPhone);
         localStorage.setItem("customerAlternatePhone", customerAlternatePhone);
 
+        // Keep the order money pieces at the exact submitted values.
+        updateTotalsUI();
+
         // Retrieve customer Email from localStorage
         const customerEmail = localStorage.getItem("userEmail");
 
         // Depending on the selected payment method, route accordingly
         if (selectedPaymentMethod === "card") {
-            // Redirect to Flutterwave payment platform
+            // Process card payment through Paystack
             makePayment();
         } else if (selectedPaymentMethod === "delivery") {
             // Handle pay on delivery option
@@ -298,22 +324,26 @@ function generateTransactionReference() {
     return `TX-${timestamp}-${randomNumber}`;
 }
 
-const customerEmail = localStorage.getItem("userEmail");
-const storedAmount = (localStorage.getItem("totalAmount") || "0").replace(
-    /,/g,
-    "",
-);
-const customerAmount = parseInt(storedAmount, 10) * 100; // Amount in kobo (10000 kobo = 100 NGN)
-const customerName = localStorage.getItem("customerName");
-const customerPhone = localStorage.getItem("customerPhone");
-const customerReference = generateTransactionReference();
+// Read an integer amount from storage, tolerating thousands separators.
+function readStoredAmount(key) {
+    const stored = (localStorage.getItem(key) || "0").replace(/,/g, "");
+    const amount = parseInt(stored, 10);
+    return Number.isFinite(amount) ? amount : 0;
+}
 
 // Open the Paystack modal; on success, save the order and go to the receipt.
 function makePayment() {
+    // Read the payable amount now, so the coupon and delivery fee are included.
+    const amountInKobo = readStoredAmount("totalAmount") * 100; // 100 kobo = 1 NGN
+    const customerReference = generateTransactionReference();
+    const customerEmail = localStorage.getItem("userEmail");
+    const customerName = localStorage.getItem("customerName");
+    const customerPhone = localStorage.getItem("customerPhone");
+
     const handler = PaystackPop.setup({
         key: paystackPublicKey,
         email: customerEmail,
-        amount: customerAmount,
+        amount: amountInKobo,
         currency: "NGN",
         ref: customerReference,
         metadata: {
@@ -334,6 +364,7 @@ function makePayment() {
             // This function is called when the payment is successful
             alert("Payment successful! Transaction reference: " + response.reference);
 
+            const cartItems = getCartItems();
             // Save the order after successful payment
             const orderDetailsForCard = {
                 orderId: Date.now(), // Unique order ID
@@ -347,10 +378,18 @@ function makePayment() {
                 customerAlternatePhone: localStorage.getItem("customerAlternatePhone"),
                 paymentMethod: "Card",
                 transactionReference: response.reference, // Save the transaction reference
-                cart: getCartItems(), // Get items from the cart
+                subtotal: readStoredAmount("subtotal"),
+                discount: readStoredAmount("discountAmount"),
+                deliveryFee: readStoredAmount("deliveryFee"),
+                deliveryMethod: localStorage.getItem("deliveryMethodLabel") || "Door delivery",
+                total: readStoredAmount("totalAmount"),
+                cart: cartItems, // Get items from the cart
             };
             saveOrderLocally(orderDetailsForCard);
             localStorage.setItem("currentOrderId", orderDetailsForCard.orderId); // Save current order ID
+
+            // Successful payment ships the units: reduce the stock now.
+            reduceStockForProducts(cartItems);
 
             const newUpdatedMessage = {
                 id: "Order ID:" + " " + orderDetailsForCard.orderId + " " + "Paid",
@@ -367,25 +406,12 @@ function makePayment() {
         },
         onClose: function () {
             // This function is called when the user closes the payment modal without completing the payment
-            Toastify({
-                text: "Payment process was not completed.",
-                duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "left",
-                style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-            }).showToast();
+            showToast("Payment process was not completed.", "error");
         },
     });
 
     // Open the Paystack payment modal
     handler.openIframe();
-}
-
-// fuction that create orders and save orders to local storage
-function savPaideOrderLocally(orderDetailsForCard) {
-    const orders = JSON.parse(localStorage.getItem("orders")) || [];
-    orders.push(orderDetailsForCard);
-    localStorage.setItem("orders", JSON.stringify(orders));
 }
 
 // Function to handle Pay on Delivery option
@@ -399,6 +425,7 @@ function handlePayOnDelivery(
     phone,
     alternatePhone,
 ) {
+    const cartItems = getCartItems();
     const orderDetails = {
         orderId: Date.now(), // Unique order ID
         customerName: name,
@@ -410,10 +437,18 @@ function handlePayOnDelivery(
         customerPhone: phone,
         customerAlternatePhone: alternatePhone,
         paymentMethod: "Pay on Delivery",
-        cart: getCartItems(), // Get items from the cart
+        subtotal: readStoredAmount("subtotal"),
+        discount: readStoredAmount("discountAmount"),
+        deliveryFee: readStoredAmount("deliveryFee"),
+        deliveryMethod: localStorage.getItem("deliveryMethodLabel") || "Door delivery",
+        total: readStoredAmount("totalAmount"),
+        cart: cartItems, // Get items from the cart
     };
     saveOrderLocally(orderDetails);
     localStorage.setItem("currentOrderId", orderDetails.orderId); // Save current order ID
+
+    // The order is placed: reserve the stock for this order now.
+    reduceStockForProducts(cartItems);
 
     const newUpdatedMsg = {
         id: "Order ID:" + " " + orderDetails.orderId + " " + "Pending-Payment",

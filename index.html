@@ -81,6 +81,43 @@
                 </a>
             </div>
 
+            <script>
+                // Settle the header into its final state during parsing, before
+                // the browser paints it: admins get no cart, and signed-in
+                // visitors get their profile chip instead of the login menu.
+                // Without this the header paints generic, then reflows when
+                // index.js resolves the session (the search bar visibly shifts).
+                // index.js finds this chip and takes it over (badge + click).
+                var adminSession = localStorage.getItem("isAdminLoggedIn") === "true";
+                var memberSession = localStorage.getItem("isLoggedIn") === "true";
+                if (adminSession) {
+                    document.querySelector(".navbar .cart").style.display = "none";
+                }
+                if (adminSession || memberSession) {
+                    var userMenu = document.querySelector(".navbar .user-account");
+                    var chipHost = document.querySelector(".navbar .handleUserStates");
+                    if (userMenu && chipHost) {
+                        userMenu.style.display = "none";
+                        var chipName = "Admin";
+                        if (!adminSession) {
+                            try {
+                                var savedProfile = JSON.parse(
+                                    localStorage.getItem("createProfile") || "{}",
+                                );
+                                if (savedProfile && savedProfile.firstName) {
+                                    chipName = savedProfile.firstName;
+                                }
+                            } catch (profileError) { /* keep the chip generic */ }
+                        }
+                        chipHost.insertAdjacentHTML(
+                            "beforeend",
+                            '<div class="profileAccount"><span>Hi <span class="profileAccountName">'
+                            + chipName + "</span></span></div>",
+                        );
+                    }
+                }
+            </script>
+
         </nav>
 
         <!-- slider -->

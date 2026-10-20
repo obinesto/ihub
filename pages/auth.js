@@ -9,6 +9,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = form.elements.email;
     const password = form.elements.password;
 
+    // A matching active session has no business on a sign-in page: bounce to
+    // the matching dashboard straight away. (A member may still open the
+    // admin login to switch accounts, and vice versa.)
+    if (mode !== "admin" && localStorage.getItem("isLoggedIn") === "true") {
+        window.location.replace("member.html");
+        return;
+    }
+    if (mode === "admin" && localStorage.getItem("isAdminLoggedIn") === "true") {
+        window.location.replace("admin.html");
+        return;
+    }
+
     // Show a form-level status message above the submit button.
     function showStatus(message, kind = "error") {
         status.textContent = message;

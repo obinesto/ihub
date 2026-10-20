@@ -11,14 +11,7 @@ function stockForProduct(productId) {
 
 // Toast warnings about stock limits.
 function showStockToast(text) {
-  if (!window.Toastify) return;
-  Toastify({
-    text: text,
-    duration: 3500,
-    gravity: "top",
-    position: "left",
-    style: { background: "#d50000", color: "#fff" },
-  }).showToast();
+  showToast(text, "error", 3500);
 }
 
 // Cart page: render items and totals, and handle quantity, remove, and clear.
@@ -168,14 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Empty the stored cart after confirming it has items, then toast.
   function clearCart() {
     if (cart.length === 0) {
-      Toastify({
-        text: "Your cart is empty!",
-        duration: 3000,
-        gravity: "top", // `top` or `bottom`
-        position: "left",
-        style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-      }).showToast();
-
+      showToast("Your cart is empty!", "info");
       return;
     }
 
@@ -184,13 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("cart", JSON.stringify(cart));
     renderCart();
 
-    Toastify({
-      text: "Your Cart is Cleared Successfully!",
-      duration: 3000,
-      gravity: "top", // `top` or `bottom`
-      position: "left",
-      style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-    }).showToast();
+    showToast("Your Cart is Cleared Successfully!", "success");
   }
 
   // Checkout functionality
@@ -204,13 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Route to checkout when the cart has items; warn otherwise.
   function handleCartcheck() {
     if (cart.length === 0) {
-      Toastify({
-        text: "Your cart is empty!",
-        duration: 3000,
-        gravity: "top", // `top` or `bottom`
-        position: "left",
-        style: { background: "linear-gradient(to right, #00b09b, #96c93d)" },
-      }).showToast();
+      showToast("Your cart is empty!", "error");
     } else {
       // Check which radio button is selected
       const selectedPaymentMethod = document.querySelector(
